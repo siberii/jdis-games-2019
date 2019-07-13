@@ -20,6 +20,32 @@ from pacman.capture import GameState
 from pacman.captureAgents import CaptureAgent
 
 
+def getMostProbableManhattanDistance(yourPosition: Tuple[int, int], ennemyIndex: int, gamestate: GameState) -> List[int]:
+    agentDistance = gamestate.getAgentDistances()[ennemyIndex]
+    proba = 0.0
+    distances = []
+    bounce = 0
+    while proba < 0.75:
+        currentDistance = agentDistance+bounce
+        proba += gamestate.getDistanceProb(currentDistance, agentDistance)
+        if (currentDistance not in distances):
+            distances.append(currentDistance)
+        currentDistance = agentDistance-bounce
+        proba += gamestate.getDistanceProb(currentDistance, agentDistance)
+        if (currentDistance not in distances):
+            distances.append(currentDistance)
+        bounce += 1
+    return distances
+
+
+def isProbablyCloserThan(yourPosition: Tuple[int, int], ennemyIndex: int, gamestate: GameState, worryDistance: int):
+    probableDistances = getMostProbableManhattanDistance(yourPosition, ennemyIndex, gamestate)
+    for distance in probableDistances:
+        if worryDistance > distance:
+            return True
+    return False
+
+
 def isAlreadyBetter(cell, dict, currentCount):
     if cell in dict:
         if(dict[cell] <= currentCount):
@@ -51,7 +77,6 @@ def getAdjacent(tile: Tuple[int, int]) -> List[Tuple[int, int]]:
 
 def findDirection(dict, origin: Tuple[int, int]) -> str:
     closest = 1000
-    adjacentCells = getAdjacent(origin)
     direction = Directions.NORTH
     west = (origin[0]+1, origin[1])
     east = (origin[0]-1, origin[1])
@@ -208,11 +233,43 @@ class AgentOne(CaptureAgent):
         return nBFood
 
 
+Behavior = {
+    'PULL': 'PULL',
+    'PUSH': 'PUSH',
+    'PATROL': 'PATROL',
+    'FOLLOW': 'FOLLOW'
+}
+
+
 class AgentTwo(CaptureAgent):
+    gridWall = []
+    mapMiddlePoint = []
+    currBehavior = Behavior['PUSH']
+    currDestination = []
+    initialPosition = []
+    currPosition = []
+
     def registerInitialState(self, gameState: GameState):
         CaptureAgent.registerInitialState(self, gameState)
+        self.gridWall = gameState.getWalls()
+        self.mapMiddlePoint = (self.gridWall.width//2, self.gridWall.height//2)
+        self.initialPosition = gameState.getAgentPosition(self.index)
+        self.currPosition = self.initialPosition
 
     def chooseAction(self, gameState: GameState) -> str:
-        actions = gameState.getLegalActions(self.index)
-        # return random.choice(actions)
-        return Directions.NORTH
+        self.updatePosition(gameState)
+
+        if self.currPosition == self.mapMiddlePoint and self.currBehavior == Behavior['PUSH']:
+            self.currBehavior = Behavior['PULL']
+        else:
+            self.currBehavior = Behavior['PUSH']
+
+        if self.currBehavior == Behavior['PUSH']:
+            self.currDestination = self.mapMiddlePoint
+        elif self.currBehavior == Behavior['PULL']:
+            self.currDestination = self.initialPosition
+
+        return getDirectionAndDistance(gameState.getAgentPosition(self.index), self.currDestination, gameState)[1]
+
+    def updatePosition(self, gameState):
+        self.currPosition = gameState.getAgentPosition(self.index)
