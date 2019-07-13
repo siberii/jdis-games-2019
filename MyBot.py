@@ -281,11 +281,11 @@ class AgentTwo(CaptureAgent):
         # Threat evaluation
         self.updatePosition(gameState)
 
-        #update behavior according to threat evaluation
+        # update behavior according to threat evaluation
         if self.currPosition == self.mapMiddlePoint:
             self.currBehavior = Behavior['FOLLOW']
-        
-        #update action according to behavior
+
+        # update action according to behavior
         if self.currBehavior == Behavior['PUSH']:
             self.currDestination = self.mapMiddlePoint
         elif self.currBehavior == Behavior['PULL']:
@@ -300,5 +300,3 @@ class AgentTwo(CaptureAgent):
 
     def updatePosition(self, gameState):
         self.currPosition = gameState.getAgentPosition(self.index)
-    
-    
