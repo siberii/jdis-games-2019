@@ -12,6 +12,7 @@
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
 
 import random
+import time
 from pacman.game import Directions
 import pacman.util as util # Free utility functions like Stack or Queue ! 
 from typing import Tuple, List
@@ -19,14 +20,14 @@ from pacman.capture import GameState
 from pacman.captureAgents import CaptureAgent
 
 
-def isAlreadyBetter(cell,queue):
-    for element in queue:
-        if cell[0]==element[0]:
-            if element[1]<cell[1]:
-                return True
-            else:
-                return False 
-    return False
+def isAlreadyBetter(cell,dict,currentCount):
+    if cell in dict:
+        if(dict[cell] <= currentCount):
+            return True
+        else:
+            return False
+    else:
+        return False
     
 
 def isInList(myList, point)->bool:
@@ -42,48 +43,55 @@ def getAdjacent(tile:Tuple[int,int])->List[Tuple[int,int]]:
     listOfAdjacent.append((x+1,y))
     listOfAdjacent.append((x,y+1))
     listOfAdjacent.append((x-1,y))
+    
     listOfAdjacent.append((x,y-1))
     return listOfAdjacent
 
-def findDirection(queue:List,origin: Tuple[int,int])->str:
-    reverseQueue= reversed(queue)
+def findDirection(dict, origin: Tuple[int,int])->str:
+    closest=1000
     adjacentCells=getAdjacent(origin)
-    for element in reverseQueue:
-        if element[0] in adjacentCells:
-            if element[0][0]+1==origin[0]:
-                return Directions.WEST
-            elif element[0][0]-1==origin[0]:
-                return Directions.EAST
-            elif element[0][1]+1==origin[1]:
-                return Directions.SOUTH
-            else:
-                return Directions.NORTH
-    return
+    direction=Directions.NORTH
+    west=(origin[0]+1,origin[1])
+    east=(origin[0]-1,origin[1])
+    south=(origin[0],origin[1]+1)
+    north=(origin[0],origin[1]-1)
+
+    if (west in dict and dict[west]<closest):
+        closest=dict[west]
+        direction=Directions.EAST
+    if (east in dict and dict[east]<closest):
+        closest=dict[east]
+        direction=Directions.WEST
+    if (south in dict and dict[south]<closest):
+        closest=dict[south]
+        direction=Directions.NORTH
+    if (north in dict and dict[north]<closest):
+        closest=dict[north]
+        direction=Directions.SOUTH
+    return direction
 
 
-
-
-
-def AddToQueue(tile:Tuple, queue, grid):
-    adjacentCells=getAdjacent(tile[0])
-    goodCells=[]
+def AddToQueue(actualTile:Tuple, toCheck:List, dict, grid):
+    adjacentCells=getAdjacent(actualTile)
     for cell in adjacentCells:
         if(not grid[cell[0]][cell[1]]
-           and not isAlreadyBetter((cell,tile[1]+1),queue)):
-           goodCells.append((cell,tile[1]+1))
-    queue+=goodCells
+           and not isAlreadyBetter(cell, dict, dict[actualTile]+1)):
+                dict[cell]= dict[actualTile]+1
+                toCheck.append(cell)
 
     
 def getDirectionAndDistance(fromPoint:Tuple[int,int],toPoint:Tuple[int,int], gamestate:GameState) -> Tuple[int,str]:
-    grid =gamestate.getWalls()
+    grid = gamestate.getWalls()
 
-    myList=[((toPoint[0],toPoint[1]),0)]
-
-    index=0
-    while (not isInList(myList,fromPoint)):
-        AddToQueue(myList[index], myList, grid)
-        index+=1
-    return (index,findDirection(myList,fromPoint))
+    myDict={(toPoint[0],toPoint[1]) : 0}
+    toCheck=[(toPoint[0],toPoint[1])]
+    distance=0
+    while fromPoint not in myDict:
+        AddToQueue(toCheck[distance],toCheck, myDict, grid)
+        distance+=1
+    isInList(myDict,fromPoint)
+    
+    return (distance,findDirection(myDict,fromPoint))
 
 
     
