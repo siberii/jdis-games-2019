@@ -217,10 +217,8 @@ class AgentOne(CaptureAgent):
         return direction
 
     def findClosestFoodDirection(self, grid, gameState: GameState) -> str:
-        if (self.index in gameState.getBlueTeamIndices()):
-            if (self.minFoodxy == gameState.getAgentPosition(self.index)):
-                self.foodInMouth += 1
-            print(self.minFoodxy, gameState.getAgentPosition(self.index))
+        if (self.minFoodxy == gameState.getAgentPosition(self.index)):
+            self.foodInMouth += 1
 
         minFood = -1
         minFoodxy = (0, 0)
@@ -260,16 +258,15 @@ Behavior = {
 class AgentTwo(CaptureAgent):
     def registerInitialState(self, gameState: GameState):
         self.gridWall = gameState.getWalls()
-        if(gameState.getAgentPosition(self.index)[0] > (self.gridWall.width - 1)// 2 ):
+        if(gameState.getAgentPosition(self.index)[0] > (self.gridWall.width - 1) // 2):
             self.mapMiddlePoint = (round((self.gridWall.width - 1) * 0.65), self.gridWall.height // 2)
         else:
-            self.mapMiddlePoint = (round((self.gridWall.width - 1)*0.35) , self.gridWall.height // 2)
+            self.mapMiddlePoint = (round((self.gridWall.width - 1)*0.35), self.gridWall.height // 2)
 
         self.goingUp = True
         self.firstPatrolDone = True
         self.topChokePoint = self.mapMiddlePoint
         self.bottomChokePoint = self.mapMiddlePoint
-
 
         CaptureAgent.registerInitialState(self, gameState)
 
@@ -302,9 +299,3 @@ class AgentTwo(CaptureAgent):
                     print("toggled up")
 
         return direction
-
-
-
-
-    
-    
