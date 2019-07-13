@@ -19,29 +19,32 @@ from typing import Tuple, List
 from pacman.capture import GameState
 from pacman.captureAgents import CaptureAgent
 
-def getMostProbableManhattanDistance(yourPosition:Tuple[int,int], ennemyIndex:int,gamestate:GameState)->List[int]:
-    agentDistance=gamestate.getAgentDistances()[ennemyIndex]
-    proba=0.0
-    distances=[]
-    bounce=0
-    while proba<0.75:
-        currentDistance=agentDistance+bounce
-        proba+=gamestate.getDistanceProb(currentDistance,agentDistance)
+
+def getMostProbableManhattanDistance(yourPosition: Tuple[int, int], ennemyIndex: int, gamestate: GameState) -> List[int]:
+    agentDistance = gamestate.getAgentDistances()[ennemyIndex]
+    proba = 0.0
+    distances = []
+    bounce = 0
+    while proba < 0.75:
+        currentDistance = agentDistance+bounce
+        proba += gamestate.getDistanceProb(currentDistance, agentDistance)
         if (currentDistance not in distances):
             distances.append(currentDistance)
-        currentDistance=agentDistance-bounce
-        proba+=gamestate.getDistanceProb(currentDistance,agentDistance)
+        currentDistance = agentDistance-bounce
+        proba += gamestate.getDistanceProb(currentDistance, agentDistance)
         if (currentDistance not in distances):
             distances.append(currentDistance)
-        bounce+=1
+        bounce += 1
     return distances
 
-def isProbablyCloserThan(yourPosition:Tuple[int,int], ennemyIndex:int,gamestate:GameState, worryDistance:int):
-    probableDistances=getMostProbableManhattanDistance(yourPosition,ennemyIndex,gamestate)
+
+def isProbablyCloserThan(yourPosition: Tuple[int, int], ennemyIndex: int, gamestate: GameState, worryDistance: int):
+    probableDistances = getMostProbableManhattanDistance(yourPosition, ennemyIndex, gamestate)
     for distance in probableDistances:
-        if worryDistance>distance:
+        if worryDistance > distance:
             return True
     return False
+
 
 def isAlreadyBetter(cell, dict, currentCount):
     if cell in dict:
@@ -71,26 +74,27 @@ def getAdjacent(tile: Tuple[int, int]) -> List[Tuple[int, int]]:
     listOfAdjacent.append((x, y-1))
     return listOfAdjacent
 
-def findDirection(dict, origin: Tuple[int,int])->str:
-    closest=1000
-    direction=Directions.NORTH
-    west=(origin[0]+1,origin[1])
-    east=(origin[0]-1,origin[1])
-    south=(origin[0],origin[1]+1)
-    north=(origin[0],origin[1]-1)
 
-    if (west in dict and dict[west]<closest):
-        closest=dict[west]
-        direction=Directions.EAST
-    if (east in dict and dict[east]<closest):
-        closest=dict[east]
-        direction=Directions.WEST
-    if (south in dict and dict[south]<closest):
-        closest=dict[south]
-        direction=Directions.NORTH
-    if (north in dict and dict[north]<closest):
-        closest=dict[north]
-        direction=Directions.SOUTH
+def findDirection(dict, origin: Tuple[int, int]) -> str:
+    closest = 1000
+    direction = Directions.NORTH
+    west = (origin[0]+1, origin[1])
+    east = (origin[0]-1, origin[1])
+    south = (origin[0], origin[1]+1)
+    north = (origin[0], origin[1]-1)
+
+    if (west in dict and dict[west] < closest):
+        closest = dict[west]
+        direction = Directions.EAST
+    if (east in dict and dict[east] < closest):
+        closest = dict[east]
+        direction = Directions.WEST
+    if (south in dict and dict[south] < closest):
+        closest = dict[south]
+        direction = Directions.NORTH
+    if (north in dict and dict[north] < closest):
+        closest = dict[north]
+        direction = Directions.SOUTH
     return direction
 
 
@@ -172,8 +176,17 @@ class AgentOne(CaptureAgent):
         Your initialization code goes here, if you need any.
         '''
         self.gridWall = gameState.getWalls()
-        self.mapMiddlePoint = (self.gridWall.width//2, self.gridWall.height//2)
-        
+
+        if (self.index in gameState.getRedTeamIndices()):
+            # left side
+            self.mapMiddlePoint = (self.gridWall.width//2 - 2, self.gridWall.height//2)
+            self.lastNbFood = self.findNbFoodLeft(gameState.getRedFood(), gameState)
+        else:
+            # right side
+            self.mapMiddlePoint = (self.gridWall.width//2 + 2, self.gridWall.height//2)
+            self.lastNbFood = self.findNbFoodLeft(gameState.getBlueFood(), gameState)
+
+        print(self.mapMiddlePoint)
 
     def chooseAction(self, gameState: GameState) -> str:
         """
@@ -183,11 +196,19 @@ class AgentOne(CaptureAgent):
         ownPosition = gameState.getAgentPosition(ownIndex)
 
         if (ownIndex in gameState.getBlueTeamIndices()):
-            direction = self.findClosestFoodDirection(gameState.getRedFood(), gameState)
+            if self.findNbFoodLeft(gameState.getRedFood(), gameState) >= self.lastNbFood - 1:
+                direction = self.findClosestFoodDirection(gameState.getRedFood(), gameState)
+                print("goFood")
+            else:
+                direction = getDirectionAndDistance(ownPosition, self.mapMiddlePoint, gameState)[1]
+                self.lastNbFood = self.findNbFoodLeft(gameState.getRedFood(), gameState)
+                print("goHome")
         else:
-            direction = self.findClosestFoodDirection(gameState.getBlueFood(), gameState)
-
-        # direction = getDirectionAndDistance(ownPosition, destination, gameState)[1]
+            if self.findNbFoodLeft(gameState.getRedFood(), gameState) >= self.lastNbFood - 1:
+                direction = self.findClosestFoodDirection(gameState.getBlueFood(), gameState)
+            else:
+                direction = getDirectionAndDistance(ownPosition, self.mapMiddlePoint, gameState)[1]
+                self.lastNbFood = self.findNbFoodLeft(gameState.getRedFood(), gameState)
 
         return direction
 
@@ -203,12 +224,23 @@ class AgentOne(CaptureAgent):
                         minFood = getDirectionAndDistance(ownPosition, (i, j), gameState)
         return minFood[1]
 
+    def findNbFoodLeft(self, grid, gameState: GameState) -> int:
+        nBFood = 0
+        for i in range(grid.width):
+            for j in range(grid.height):
+                if grid[i][j]:
+                    nBFood += 1
+        return nBFood
+
+
 Behavior = {
-    'PULL' : 'PULL',
-    'PUSH' : 'PUSH',
-    'PATROL' : 'PATROL',
-    'FOLLOW' : 'FOLLOW'
+    'PULL': 'PULL',
+    'PUSH': 'PUSH',
+    'PATROL': 'PATROL',
+    'FOLLOW': 'FOLLOW'
 }
+
+
 class AgentTwo(CaptureAgent):
     gridWall = []
     mapMiddlePoint = []
@@ -239,8 +271,8 @@ class AgentTwo(CaptureAgent):
             self.currDestination = self.mapMiddlePoint
         elif self.currBehavior == Behavior['PULL']:
             self.currDestination = self.initialPosition
-        
+
         return getDirectionAndDistance(gameState.getAgentPosition(self.index), self.currDestination, gameState)[1]
-    
+
     def updatePosition(self, gameState):
         self.currPosition = gameState.getAgentPosition(self.index)
