@@ -250,7 +250,7 @@ class AgentOne(CaptureAgent):
             if (self.minFoodxy == gameState.getAgentPosition(self.index)):
                 self.foodInMouth += 1
 
-            if self.foodInMouth < 2 and self.findNbFoodLeft(gameState.getRedFood(), gameState) > 0:
+            if self.foodInMouth < 8 and self.findNbFoodLeft(gameState.getRedFood(), gameState) > 0:
                 direction = self.findClosestFoodDirection(gameState.getRedFood(), gameState)
             else:
                 direction = getDirectionAndDistance(ownPosition, self.home, gameState)[1]
@@ -262,7 +262,7 @@ class AgentOne(CaptureAgent):
             if (self.minFoodxy == gameState.getAgentPosition(self.index)):
                 self.foodInMouth += 1
 
-            if self.foodInMouth < 2 and self.findNbFoodLeft(gameState.getRedFood(), gameState) > 0:
+            if self.foodInMouth < 8 and self.findNbFoodLeft(gameState.getRedFood(), gameState) > 0:
                 direction = self.findClosestFoodDirection(gameState.getBlueFood(), gameState)
             else:
                 direction = getDirectionAndDistance(ownPosition, self.home, gameState)[1]
