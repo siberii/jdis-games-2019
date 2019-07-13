@@ -185,12 +185,41 @@ class AgentOne(CaptureAgent):
                         minFood = getDirectionAndDistance(ownPosition, (i, j), gameState)
         return minFood[1]
 
-
+Behavior = {
+    'PULL' : 'PULL',
+    'PUSH' : 'PUSH',
+    'PATROL' : 'PATROL',
+    'FOLLOW' : 'FOLLOW'
+}
 class AgentTwo(CaptureAgent):
+    gridWall = []
+    mapMiddlePoint = []
+    currBehavior = Behavior['PUSH']
+    currDestination = []
+    initialPosition = []
+    currPosition = []
+
     def registerInitialState(self, gameState: GameState):
         CaptureAgent.registerInitialState(self, gameState)
+        self.gridWall = gameState.getWalls()
+        self.mapMiddlePoint = (self.gridWall.width//2, self.gridWall.height//2)
+        self.initialPosition = gameState.getAgentPosition(self.index)
+        self.currPosition = self.initialPosition
 
     def chooseAction(self, gameState: GameState) -> str:
-        actions = gameState.getLegalActions(self.index)
-        # return random.choice(actions)
-        return Directions.NORTH
+        self.updatePosition(gameState)
+
+        if self.currPosition == self.mapMiddlePoint and self.currBehavior == Behavior['PUSH']:
+            self.currBehavior = Behavior['PULL']
+        else:
+            self.currBehavior = Behavior['PUSH']
+        
+        if self.currBehavior == Behavior['PUSH']:
+            self.currDestination = self.mapMiddlePoint
+        elif self.currBehavior == Behavior['PULL']:
+            self.currDestination = self.initialPosition
+        
+        return getDirectionAndDistance(gameState.getAgentPosition(self.index), self.currDestination, gameState)[1]
+    
+    def updatePosition(self, gameState):
+        self.currPosition = gameState.getAgentPosition(self.index)
