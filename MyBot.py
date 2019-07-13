@@ -19,6 +19,29 @@ from typing import Tuple, List
 from pacman.capture import GameState
 from pacman.captureAgents import CaptureAgent
 
+def getMostProbableManhattanDistance(yourPosition:Tuple[int,int], ennemyIndex:int,gamestate:GameState)->List[int]:
+    agentDistance=gamestate.getAgentDistances()[ennemyIndex]
+    proba=0.0
+    distances=[]
+    bounce=0
+    while proba<0.75:
+        currentDistance=agentDistance+bounce
+        proba+=gamestate.getDistanceProb(currentDistance,agentDistance)
+        if (currentDistance not in distances):
+            distances.append(currentDistance)
+        currentDistance=agentDistance-bounce
+        proba+=gamestate.getDistanceProb(currentDistance,agentDistance)
+        if (currentDistance not in distances):
+            distances.append(currentDistance)
+        bounce+=1
+    return distances
+
+def isProbablyCloserThan(yourPosition:Tuple[int,int], ennemyIndex:int,gamestate:GameState, worryDistance:int):
+    probableDistances=getMostProbableManhattanDistance(yourPosition,ennemyIndex,gamestate)
+    for distance in probableDistances:
+        if worryDistance>distance:
+            return True
+    return False
 
 def isAlreadyBetter(cell,dict,currentCount):
     if cell in dict:
@@ -49,7 +72,6 @@ def getAdjacent(tile:Tuple[int,int])->List[Tuple[int,int]]:
 
 def findDirection(dict, origin: Tuple[int,int])->str:
     closest=1000
-    adjacentCells=getAdjacent(origin)
     direction=Directions.NORTH
     west=(origin[0]+1,origin[1])
     east=(origin[0]-1,origin[1])
@@ -153,7 +175,6 @@ class AgentOne(CaptureAgent):
         '''
         self.gridWall = gameState.getWalls()
         self.mapMiddlePoint = (self.gridWall.width//2, self.gridWall.height//2)
-        print(self.mapMiddlePoint)
         
 
     def chooseAction(self, gameState: GameState) -> str:
@@ -161,9 +182,7 @@ class AgentOne(CaptureAgent):
         Picks among legal actions randomly.
         """
         ownIndex=self.index
-        print(ownIndex)
         ownPosition=gameState.getAgentPosition(ownIndex)
-        print(ownPosition)
         destination = self.mapMiddlePoint
         # if (ownIndex in gameState.getBlueTeamIndices()):
         #     destination=gameState.getRedFood()[0]
@@ -171,7 +190,6 @@ class AgentOne(CaptureAgent):
         #     destination=gameState.getBlueFood()[0]
 
         direction=getDirectionAndDistance(ownPosition,destination,gameState)[1]
-        print (direction)
         return direction
 
 
@@ -181,5 +199,15 @@ class AgentTwo(CaptureAgent):
         CaptureAgent.registerInitialState(self, gameState)
     
     def chooseAction(self, gameState: GameState) -> str:
-        actions = gameState.getLegalActions(self.index)
-        return random.choice(actions)
+        ownIndex=self.index
+        ownPosition=gameState.getAgentPosition(ownIndex)
+        ennemyIndex=0
+        if (ownIndex in gameState.getBlueTeamIndices()):
+            destination=gameState.getRedCapsules()[0]
+            ennemyIndex=gameState.getRedTeamIndices()[0]
+        else:
+            destination=gameState.getBlueCapsules()[0]
+            ennemyIndex=gameState.getBlueTeamIndices()[0]
+        direction=getDirectionAndDistance(ownPosition,destination,gameState)[1]
+        results=getMostProbableManhattanDistance(ownPosition,ennemyIndex,gameState)
+        return direction
