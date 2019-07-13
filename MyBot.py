@@ -264,6 +264,7 @@ class AgentTwo(CaptureAgent):
     currDestination = []
     initialPosition = []
     currPosition = []
+    enemyTeamIndices = []
 
     def registerInitialState(self, gameState: GameState):
         CaptureAgent.registerInitialState(self, gameState)
@@ -271,24 +272,33 @@ class AgentTwo(CaptureAgent):
         self.mapMiddlePoint = (self.gridWall.width//2, self.gridWall.height//2)
         self.initialPosition = gameState.getAgentPosition(self.index)
         self.currPosition = self.initialPosition
+        if gameState.isOnRedTeam(self.index):
+            self.enemyTeamIndices = gameState.getBlueTeamIndices()
+        else:
+            self.enemyTeamIndices = gameState.getRedTeamIndices()
 
     def chooseAction(self, gameState: GameState) -> str:
         # Threat evaluation
         self.updatePosition(gameState)
 
-        # update behavior according to threat evaluation
-        if self.currPosition == self.mapMiddlePoint and self.currBehavior == Behavior['PUSH']:
-            self.currBehavior = Behavior['PULL']
-        else:
-            self.currBehavior = Behavior['PUSH']
-
-        # update action according to behavior
+        #update behavior according to threat evaluation
+        if self.currPosition == self.mapMiddlePoint:
+            self.currBehavior = Behavior['FOLLOW']
+        
+        #update action according to behavior
         if self.currBehavior == Behavior['PUSH']:
             self.currDestination = self.mapMiddlePoint
         elif self.currBehavior == Behavior['PULL']:
             self.currDestination = self.initialPosition
+        elif self.currBehavior == Behavior['FOLLOW']:
+            self.currDestination = self.mapMiddlePoint
+        elif self.currBehavior == Behavior['PATROL']:
+            actions = gameState.getLegalActions(self.index)
+            return random.choice(actions)
 
         return getDirectionAndDistance(gameState.getAgentPosition(self.index), self.currDestination, gameState)[1]
 
     def updatePosition(self, gameState):
         self.currPosition = gameState.getAgentPosition(self.index)
+    
+    
