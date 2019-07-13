@@ -74,54 +74,53 @@ def getAdjacent(tile: Tuple[int, int]) -> List[Tuple[int, int]]:
     listOfAdjacent.append((x, y-1))
     return listOfAdjacent
 
-def findHome(walls, initialPos:Tuple[int,int])->Tuple[int,int]:\
 
-    globalMiddle=(walls.width//2-1, walls.height//2-1)
+def findHome(walls, initialPos: Tuple[int, int]) -> Tuple[int, int]:\
+
+    globalMiddle = (walls.width//2-1, walls.height//2-1)
 
     # Left side
-    if initialPos[0]<=globalMiddle[0]:
+    if initialPos[0] <= globalMiddle[0]:
         if (not walls[globalMiddle[0]][globalMiddle[1]]):
             return globalMiddle
         elif(not walls[globalMiddle[0]][globalMiddle[1]+1]):
-            return (globalMiddle[0],globalMiddle[1]+1)
+            return (globalMiddle[0], globalMiddle[1]+1)
 
         elif(not walls[globalMiddle[0]][globalMiddle[1]-1]):
-            return (globalMiddle[0],globalMiddle[1]-1)
+            return (globalMiddle[0], globalMiddle[1]-1)
 
         elif(not walls[globalMiddle[0]-1][globalMiddle[1]]):
-            return (globalMiddle[0]-1,globalMiddle[1])
+            return (globalMiddle[0]-1, globalMiddle[1])
 
         elif(not walls[globalMiddle[0]-1][globalMiddle[1]-1]):
-            return (globalMiddle[0]-1,globalMiddle[1]-1)
+            return (globalMiddle[0]-1, globalMiddle[1]-1)
 
         elif(not walls[globalMiddle[0]-1][globalMiddle[1]+1]):
-            return (globalMiddle[0]-1,globalMiddle[1]+1)
+            return (globalMiddle[0]-1, globalMiddle[1]+1)
         else:
-            return (globalMiddle[0]-1,globalMiddle[1]+1)
+            return (globalMiddle[0]-1, globalMiddle[1]+1)
 
     # Rightt side
     else:
-        trueInitialPos=(globalMiddle[0]+1,globalMiddle[1])
+        trueInitialPos = (globalMiddle[0]+1, globalMiddle[1])
         if (not walls[trueInitialPos[0]][trueInitialPos[1]]):
             return trueInitialPos
         elif(not walls[trueInitialPos[0]][trueInitialPos[1]+1]):
-            return (trueInitialPos[0],trueInitialPos[1]+1)
+            return (trueInitialPos[0], trueInitialPos[1]+1)
 
         elif(not walls[trueInitialPos[0]][trueInitialPos[1]-1]):
-            return (trueInitialPos[0],trueInitialPos[1]-1)
+            return (trueInitialPos[0], trueInitialPos[1]-1)
 
         elif(not walls[trueInitialPos[0]-1][trueInitialPos[1]]):
-            return (trueInitialPos[0]-1,trueInitialPos[1])
+            return (trueInitialPos[0]-1, trueInitialPos[1])
 
         elif(not walls[trueInitialPos[0]-1][trueInitialPos[1]-1]):
-            return (trueInitialPos[0]-1,trueInitialPos[1]-1)
+            return (trueInitialPos[0]-1, trueInitialPos[1]-1)
 
         elif(not walls[trueInitialPos[0]-1][trueInitialPos[1]+1]):
-            return (trueInitialPos[0]-1,trueInitialPos[1]+1)
+            return (trueInitialPos[0]-1, trueInitialPos[1]+1)
         else:
-            return (trueInitialPos[0]-1,trueInitialPos[1]+1)
-
-
+            return (trueInitialPos[0]-1, trueInitialPos[1]+1)
 
 
 def findDirection(dict, origin: Tuple[int, int]) -> str:
@@ -193,7 +192,7 @@ def createTeam(firstIndex, secondIndex, isRed):
 class AgentOne(CaptureAgent):
     gridWall = []
     mapMiddlePoint = []
-    home=[]
+    home = []
 
     """
     A Dummy agent to serve as an example of the necessary agent structure.
@@ -228,7 +227,7 @@ class AgentOne(CaptureAgent):
         self.minFoodxy = (0, 0)
 
         self.gridWall = gameState.getWalls()
-        self.home = findHome(self.gridWall,gameState.getAgentPosition(self.index))
+        self.home = findHome(self.gridWall, gameState.getAgentPosition(self.index))
 
         if (self.index in gameState.getRedTeamIndices()):
             # left side
@@ -247,6 +246,10 @@ class AgentOne(CaptureAgent):
         ownPosition = gameState.getAgentPosition(ownIndex)
 
         if (ownIndex in gameState.getBlueTeamIndices()):
+
+            if (self.minFoodxy == gameState.getAgentPosition(self.index)):
+                self.foodInMouth += 1
+
             if self.foodInMouth < 2 and self.findNbFoodLeft(gameState.getRedFood(), gameState) > 0:
                 direction = self.findClosestFoodDirection(gameState.getRedFood(), gameState)
             else:
@@ -255,6 +258,10 @@ class AgentOne(CaptureAgent):
                     self.foodInMouth = 0
 
         else:
+
+            if (self.minFoodxy == gameState.getAgentPosition(self.index)):
+                self.foodInMouth += 1
+
             if self.foodInMouth < 2 and self.findNbFoodLeft(gameState.getRedFood(), gameState) > 0:
                 direction = self.findClosestFoodDirection(gameState.getBlueFood(), gameState)
             else:
@@ -265,9 +272,6 @@ class AgentOne(CaptureAgent):
         return direction
 
     def findClosestFoodDirection(self, grid, gameState: GameState) -> str:
-        if (self.minFoodxy == gameState.getAgentPosition(self.index)):
-            self.foodInMouth += 1
-
         minFood = -1
         minFoodxy = (0, 0)
         ownPosition = gameState.getAgentPosition(self.index)
@@ -308,7 +312,7 @@ class AgentTwo(CaptureAgent):
         self.gridWall = gameState.getWalls()
         self.initialPosition = gameState.getAgentPosition(self.index)
         self.currPosition = self.initialPosition
-        self.home = findHome(self.gridWall,self.initialPosition)
+        self.home = findHome(self.gridWall, self.initialPosition)
         if(gameState.getAgentPosition(self.index)[0] > (self.gridWall.width - 1) // 2):
             self.mapMiddlePoint = (round((self.gridWall.width - 1) * 0.65), self.gridWall.height // 2)
         else:
