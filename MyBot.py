@@ -118,6 +118,9 @@ def createTeam(firstIndex, secondIndex, isRed):
 ##########
 
 class AgentOne(CaptureAgent):
+    gridWall = []
+    mapMiddlePoint = []
+
     """
     A Dummy agent to serve as an example of the necessary agent structure.
     You should look at baselineTeam.py for more details about how to
@@ -148,6 +151,10 @@ class AgentOne(CaptureAgent):
         '''
         Your initialization code goes here, if you need any.
         '''
+        self.gridWall = gameState.getWalls()
+        self.mapMiddlePoint = (self.gridWall.width//2, self.gridWall.height//2)
+        print(self.mapMiddlePoint)
+        
 
     def chooseAction(self, gameState: GameState) -> str:
         """
@@ -157,15 +164,16 @@ class AgentOne(CaptureAgent):
         print(ownIndex)
         ownPosition=gameState.getAgentPosition(ownIndex)
         print(ownPosition)
-        destination=(0,0)
-        if (ownIndex in gameState.getBlueTeamIndices()):
-            destination=gameState.getRedCapsules()[0]
-        else:
-            destination=gameState.getBlueCapsules()[0]
+        destination = self.mapMiddlePoint
+        # if (ownIndex in gameState.getBlueTeamIndices()):
+        #     destination=gameState.getRedFood()[0]
+        # else:
+        #     destination=gameState.getBlueFood()[0]
 
         direction=getDirectionAndDistance(ownPosition,destination,gameState)[1]
         print (direction)
         return direction
+
 
 
 class AgentTwo(CaptureAgent):
