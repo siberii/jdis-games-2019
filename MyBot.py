@@ -151,7 +151,16 @@ class AgentOne(CaptureAgent):
         Your initialization code goes here, if you need any.
         '''
         self.gridWall = gameState.getWalls()
-        self.mapMiddlePoint = (self.gridWall.width//2, self.gridWall.height//2)
+
+        if (self.index in gameState.getRedTeamIndices()):
+            # left side
+            self.mapMiddlePoint = (self.gridWall.width//2 - 2, self.gridWall.height//2)
+            self.lastNbFood = self.findNbFoodLeft(gameState.getRedFood(), gameState)
+        else:
+            # right side
+            self.mapMiddlePoint = (self.gridWall.width//2 + 2, self.gridWall.height//2)
+            self.lastNbFood = self.findNbFoodLeft(gameState.getBlueFood(), gameState)
+
         print(self.mapMiddlePoint)
 
     def chooseAction(self, gameState: GameState) -> str:
@@ -159,17 +168,22 @@ class AgentOne(CaptureAgent):
         Picks among legal actions randomly.
         """
         ownIndex = self.index
-        print(ownIndex)
         ownPosition = gameState.getAgentPosition(ownIndex)
-        print(ownPosition)
 
         if (ownIndex in gameState.getBlueTeamIndices()):
-            direction = self.findClosestFoodDirection(gameState.getRedFood(), gameState)
+            if self.findNbFoodLeft(gameState.getRedFood(), gameState) >= self.lastNbFood - 1:
+                direction = self.findClosestFoodDirection(gameState.getRedFood(), gameState)
+                print("goFood")
+            else:
+                direction = getDirectionAndDistance(ownPosition, self.mapMiddlePoint, gameState)[1]
+                self.lastNbFood = self.findNbFoodLeft(gameState.getRedFood(), gameState)
+                print("goHome")
         else:
-            direction = self.findClosestFoodDirection(gameState.getBlueFood(), gameState)
-
-        # direction = getDirectionAndDistance(ownPosition, destination, gameState)[1]
-        print(direction)
+            if self.findNbFoodLeft(gameState.getRedFood(), gameState) >= self.lastNbFood - 1:
+                direction = self.findClosestFoodDirection(gameState.getBlueFood(), gameState)
+            else:
+                direction = getDirectionAndDistance(ownPosition, self.mapMiddlePoint, gameState)[1]
+                self.lastNbFood = self.findNbFoodLeft(gameState.getRedFood(), gameState)
 
         return direction
 
@@ -184,6 +198,14 @@ class AgentOne(CaptureAgent):
                     elif minFood[0] > getDirectionAndDistance(ownPosition, (i, j), gameState)[0]:
                         minFood = getDirectionAndDistance(ownPosition, (i, j), gameState)
         return minFood[1]
+
+    def findNbFoodLeft(self, grid, gameState: GameState) -> int:
+        nBFood = 0
+        for i in range(grid.width):
+            for j in range(grid.height):
+                if grid[i][j]:
+                    nBFood += 1
+        return nBFood
 
 
 class AgentTwo(CaptureAgent):
