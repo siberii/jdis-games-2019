@@ -14,7 +14,7 @@
 import random
 import time
 from pacman.game import Directions
-import pacman.util as util # Free utility functions like Stack or Queue ! 
+import pacman.util as util  # Free utility functions like Stack or Queue !
 from typing import Tuple, List
 from pacman.capture import GameState
 from pacman.captureAgents import CaptureAgent
@@ -43,7 +43,7 @@ def isProbablyCloserThan(yourPosition:Tuple[int,int], ennemyIndex:int,gamestate:
             return True
     return False
 
-def isAlreadyBetter(cell,dict,currentCount):
+def isAlreadyBetter(cell, dict, currentCount):
     if cell in dict:
         if(dict[cell] <= currentCount):
             return True
@@ -51,25 +51,27 @@ def isAlreadyBetter(cell,dict,currentCount):
             return False
     else:
         return False
-    
 
-def isInList(myList, point)->bool:
+
+def isInList(myList, point) -> bool:
     for element in myList:
-        if element[0]==point:
+        if element[0] == point:
             return True
     return False
 
-def getAdjacent(tile:Tuple[int,int])->List[Tuple[int,int]]:
-    x=tile[0]
-    y=tile[1]
-    listOfAdjacent=[]
-    listOfAdjacent.append((x+1,y))
-    listOfAdjacent.append((x,y+1))
-    listOfAdjacent.append((x-1,y))
-    
-    listOfAdjacent.append((x,y-1))
+
+def getAdjacent(tile: Tuple[int, int]) -> List[Tuple[int, int]]:
+    x = tile[0]
+    y = tile[1]
+    listOfAdjacent = []
+    listOfAdjacent.append((x+1, y))
+    listOfAdjacent.append((x, y+1))
+    listOfAdjacent.append((x-1, y))
+
+    listOfAdjacent.append((x, y-1))
     return listOfAdjacent
 
+<<<<<<< HEAD
 def findDirection(dict, origin: Tuple[int,int])->str:
     closest=1000
     direction=Directions.NORTH
@@ -90,35 +92,55 @@ def findDirection(dict, origin: Tuple[int,int])->str:
     if (north in dict and dict[north]<closest):
         closest=dict[north]
         direction=Directions.SOUTH
+=======
+
+def findDirection(dict, origin: Tuple[int, int]) -> str:
+    closest = 1000
+    adjacentCells = getAdjacent(origin)
+    direction = Directions.NORTH
+    west = (origin[0]+1, origin[1])
+    east = (origin[0]-1, origin[1])
+    south = (origin[0], origin[1]+1)
+    north = (origin[0], origin[1]-1)
+
+    if (west in dict and dict[west] < closest):
+        closest = dict[west]
+        direction = Directions.EAST
+    if (east in dict and dict[east] < closest):
+        closest = dict[east]
+        direction = Directions.WEST
+    if (south in dict and dict[south] < closest):
+        closest = dict[south]
+        direction = Directions.NORTH
+    if (north in dict and dict[north] < closest):
+        closest = dict[north]
+        direction = Directions.SOUTH
+>>>>>>> refs/remotes/origin/master
     return direction
 
 
-def AddToQueue(actualTile:Tuple, toCheck:List, dict, grid):
-    adjacentCells=getAdjacent(actualTile)
+def AddToQueue(actualTile: Tuple, toCheck: List, dict, grid):
+    adjacentCells = getAdjacent(actualTile)
     for cell in adjacentCells:
         if(not grid[cell[0]][cell[1]]
            and not isAlreadyBetter(cell, dict, dict[actualTile]+1)):
-                dict[cell]= dict[actualTile]+1
-                toCheck.append(cell)
+            dict[cell] = dict[actualTile]+1
+            toCheck.append(cell)
 
-    
-def getDirectionAndDistance(fromPoint:Tuple[int,int],toPoint:Tuple[int,int], gamestate:GameState) -> Tuple[int,str]:
+
+def getDirectionAndDistance(fromPoint: Tuple[int, int], toPoint: Tuple[int, int], gamestate: GameState) -> Tuple[int, str]:
     grid = gamestate.getWalls()
 
-    myDict={(toPoint[0],toPoint[1]) : 0}
-    toCheck=[(toPoint[0],toPoint[1])]
-    distance=0
+    myDict = {(toPoint[0], toPoint[1]): 0}
+    toCheck = [(toPoint[0], toPoint[1])]
+    distance = 0
     while fromPoint not in myDict:
-        AddToQueue(toCheck[distance],toCheck, myDict, grid)
-        distance+=1
-    isInList(myDict,fromPoint)
-    
-    return (distance,findDirection(myDict,fromPoint))
+        AddToQueue(toCheck[distance], toCheck, myDict, grid)
+        distance += 1
+    isInList(myDict, fromPoint)
 
+    return (distance, findDirection(myDict, fromPoint))
 
-    
-
-    
 
 #################
 # Team creation #
@@ -138,6 +160,7 @@ def createTeam(firstIndex, secondIndex, isRed):
 ##########
 # Agents #
 ##########
+
 
 class AgentOne(CaptureAgent):
     gridWall = []
@@ -181,23 +204,35 @@ class AgentOne(CaptureAgent):
         """
         Picks among legal actions randomly.
         """
-        ownIndex=self.index
-        ownPosition=gameState.getAgentPosition(ownIndex)
-        destination = self.mapMiddlePoint
-        # if (ownIndex in gameState.getBlueTeamIndices()):
-        #     destination=gameState.getRedFood()[0]
-        # else:
-        #     destination=gameState.getBlueFood()[0]
+        ownIndex = self.index
+        ownPosition = gameState.getAgentPosition(ownIndex)
 
-        direction=getDirectionAndDistance(ownPosition,destination,gameState)[1]
+        if (ownIndex in gameState.getBlueTeamIndices()):
+            direction = self.findClosestFoodDirection(gameState.getRedFood(), gameState)
+        else:
+            direction = self.findClosestFoodDirection(gameState.getBlueFood(), gameState)
+
+        # direction = getDirectionAndDistance(ownPosition, destination, gameState)[1]
+
         return direction
 
+    def findClosestFoodDirection(self, grid, gameState: GameState) -> str:
+        minFood = -1
+        ownPosition = gameState.getAgentPosition(self.index)
+        for i in range(grid.width):
+            for j in range(grid.height):
+                if grid[i][j]:
+                    if minFood == -1:
+                        minFood = getDirectionAndDistance(ownPosition, (i, j), gameState)
+                    elif minFood[0] > getDirectionAndDistance(ownPosition, (i, j), gameState)[0]:
+                        minFood = getDirectionAndDistance(ownPosition, (i, j), gameState)
+        return minFood[1]
 
 
 class AgentTwo(CaptureAgent):
     def registerInitialState(self, gameState: GameState):
         CaptureAgent.registerInitialState(self, gameState)
-    
+
     def chooseAction(self, gameState: GameState) -> str:
         ownIndex=self.index
         ownPosition=gameState.getAgentPosition(ownIndex)
