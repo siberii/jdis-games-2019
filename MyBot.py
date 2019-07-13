@@ -225,7 +225,6 @@ class AgentTwo(CaptureAgent):
         self.currPosition = self.initialPosition
 
     def chooseAction(self, gameState: GameState) -> str:
-<<<<<<< HEAD
         self.updatePosition(gameState)
 
         if self.currPosition == self.mapMiddlePoint and self.currBehavior == Behavior['PUSH']:
@@ -242,17 +241,3 @@ class AgentTwo(CaptureAgent):
     
     def updatePosition(self, gameState):
         self.currPosition = gameState.getAgentPosition(self.index)
-=======
-        ownIndex=self.index
-        ownPosition=gameState.getAgentPosition(ownIndex)
-        ennemyIndex=0
-        if (ownIndex in gameState.getBlueTeamIndices()):
-            destination=gameState.getRedCapsules()[0]
-            ennemyIndex=gameState.getRedTeamIndices()[0]
-        else:
-            destination=gameState.getBlueCapsules()[0]
-            ennemyIndex=gameState.getBlueTeamIndices()[0]
-        direction=getDirectionAndDistance(ownPosition,destination,gameState)[1]
-        results=getMostProbableManhattanDistance(ownPosition,ennemyIndex,gameState)
-        return direction
->>>>>>> e1af1922728754f92967a6c27ffd68ab1f83b13b
