@@ -175,18 +175,18 @@ class AgentOne(CaptureAgent):
         '''
         Your initialization code goes here, if you need any.
         '''
+        self.minFoodxy = (0, 0)
+
         self.gridWall = gameState.getWalls()
 
         if (self.index in gameState.getRedTeamIndices()):
             # left side
             self.mapMiddlePoint = (self.gridWall.width//2 - 2, self.gridWall.height//2)
-            self.lastNbFood = self.findNbFoodLeft(gameState.getRedFood(), gameState)
+            self.foodInMouth = 0
         else:
             # right side
             self.mapMiddlePoint = (self.gridWall.width//2 + 2, self.gridWall.height//2)
-            self.lastNbFood = self.findNbFoodLeft(gameState.getBlueFood(), gameState)
-
-        print(self.mapMiddlePoint)
+            self.foodInMouth = 0
 
     def chooseAction(self, gameState: GameState) -> str:
         """
@@ -196,32 +196,48 @@ class AgentOne(CaptureAgent):
         ownPosition = gameState.getAgentPosition(ownIndex)
 
         if (ownIndex in gameState.getBlueTeamIndices()):
-            if self.findNbFoodLeft(gameState.getRedFood(), gameState) >= self.lastNbFood - 1:
+            if self.foodInMouth < 2 and self.findNbFoodLeft(gameState.getRedFood(), gameState) > 0:
                 direction = self.findClosestFoodDirection(gameState.getRedFood(), gameState)
                 print("goFood")
             else:
                 direction = getDirectionAndDistance(ownPosition, self.mapMiddlePoint, gameState)[1]
-                self.lastNbFood = self.findNbFoodLeft(gameState.getRedFood(), gameState)
                 print("goHome")
+                if ownPosition == self.mapMiddlePoint:
+                    self.foodInMouth = 0
+            print(self.foodInMouth)
+
         else:
-            if self.findNbFoodLeft(gameState.getRedFood(), gameState) >= self.lastNbFood - 1:
+            if self.foodInMouth < 2 and self.findNbFoodLeft(gameState.getRedFood(), gameState) > 0:
                 direction = self.findClosestFoodDirection(gameState.getBlueFood(), gameState)
             else:
                 direction = getDirectionAndDistance(ownPosition, self.mapMiddlePoint, gameState)[1]
-                self.lastNbFood = self.findNbFoodLeft(gameState.getRedFood(), gameState)
+                if ownPosition == self.mapMiddlePoint:
+                    self.foodInMouth = 0
 
         return direction
 
     def findClosestFoodDirection(self, grid, gameState: GameState) -> str:
+        if (self.index in gameState.getBlueTeamIndices()):
+            if (self.minFoodxy == gameState.getAgentPosition(self.index)):
+                self.foodInMouth += 1
+            print(self.minFoodxy, gameState.getAgentPosition(self.index))
+
         minFood = -1
+        minFoodxy = (0, 0)
         ownPosition = gameState.getAgentPosition(self.index)
         for i in range(grid.width):
             for j in range(grid.height):
                 if grid[i][j]:
                     if minFood == -1:
                         minFood = getDirectionAndDistance(ownPosition, (i, j), gameState)
+                        minFoodxy = (i, j)
                     elif minFood[0] > getDirectionAndDistance(ownPosition, (i, j), gameState)[0]:
                         minFood = getDirectionAndDistance(ownPosition, (i, j), gameState)
+                        minFoodxy = (i, j)
+
+        self.minFoodxy = minFoodxy
+        if type(minFood) is int:
+            return Directions.NORTH
         return minFood[1]
 
     def findNbFoodLeft(self, grid, gameState: GameState) -> int:
@@ -257,16 +273,16 @@ class AgentTwo(CaptureAgent):
         self.currPosition = self.initialPosition
 
     def chooseAction(self, gameState: GameState) -> str:
-        #Threat evaluation
+        # Threat evaluation
         self.updatePosition(gameState)
 
-        #update behavior according to threat evaluation
+        # update behavior according to threat evaluation
         if self.currPosition == self.mapMiddlePoint and self.currBehavior == Behavior['PUSH']:
             self.currBehavior = Behavior['PULL']
         else:
             self.currBehavior = Behavior['PUSH']
-        
-        #update action according to behavior
+
+        # update action according to behavior
         if self.currBehavior == Behavior['PUSH']:
             self.currDestination = self.mapMiddlePoint
         elif self.currBehavior == Behavior['PULL']:
