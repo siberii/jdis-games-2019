@@ -71,7 +71,6 @@ def getAdjacent(tile: Tuple[int, int]) -> List[Tuple[int, int]]:
     listOfAdjacent.append((x, y-1))
     return listOfAdjacent
 
-<<<<<<< HEAD
 def findDirection(dict, origin: Tuple[int,int])->str:
     closest=1000
     direction=Directions.NORTH
@@ -92,30 +91,6 @@ def findDirection(dict, origin: Tuple[int,int])->str:
     if (north in dict and dict[north]<closest):
         closest=dict[north]
         direction=Directions.SOUTH
-=======
-
-def findDirection(dict, origin: Tuple[int, int]) -> str:
-    closest = 1000
-    adjacentCells = getAdjacent(origin)
-    direction = Directions.NORTH
-    west = (origin[0]+1, origin[1])
-    east = (origin[0]-1, origin[1])
-    south = (origin[0], origin[1]+1)
-    north = (origin[0], origin[1]-1)
-
-    if (west in dict and dict[west] < closest):
-        closest = dict[west]
-        direction = Directions.EAST
-    if (east in dict and dict[east] < closest):
-        closest = dict[east]
-        direction = Directions.WEST
-    if (south in dict and dict[south] < closest):
-        closest = dict[south]
-        direction = Directions.NORTH
-    if (north in dict and dict[north] < closest):
-        closest = dict[north]
-        direction = Directions.SOUTH
->>>>>>> refs/remotes/origin/master
     return direction
 
 
