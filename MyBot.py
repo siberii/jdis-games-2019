@@ -258,47 +258,53 @@ Behavior = {
 
 
 class AgentTwo(CaptureAgent):
-    gridWall = []
-    mapMiddlePoint = []
-    currBehavior = Behavior['PUSH']
-    currDestination = []
-    initialPosition = []
-    currPosition = []
-    enemyTeamIndices = []
-
     def registerInitialState(self, gameState: GameState):
-        CaptureAgent.registerInitialState(self, gameState)
         self.gridWall = gameState.getWalls()
-        self.mapMiddlePoint = (self.gridWall.width//2, self.gridWall.height//2)
-        self.initialPosition = gameState.getAgentPosition(self.index)
-        self.currPosition = self.initialPosition
-        if gameState.isOnRedTeam(self.index):
-            self.enemyTeamIndices = gameState.getBlueTeamIndices()
+        if(gameState.getAgentPosition(self.index)[0] > (self.gridWall.width - 1)// 2 ):
+            self.mapMiddlePoint = (round((self.gridWall.width - 1) * 0.65), self.gridWall.height // 2)
         else:
-            self.enemyTeamIndices = gameState.getRedTeamIndices()
+            self.mapMiddlePoint = (round((self.gridWall.width - 1)*0.35) , self.gridWall.height // 2)
+
+        self.goingUp = True
+        self.firstPatrolDone = True
+        self.topChokePoint = self.mapMiddlePoint
+        self.bottomChokePoint = self.mapMiddlePoint
+
+
+        CaptureAgent.registerInitialState(self, gameState)
 
     def chooseAction(self, gameState: GameState) -> str:
-        # Threat evaluation
-        self.updatePosition(gameState)
+        ownIndex = self.index
+        ownPosition = gameState.getAgentPosition(ownIndex)
+        if self.firstPatrolDone:
+            possibleChokePoints = []
+            grid = gameState.getWalls()
+            for i in range(len(grid[0]) - 1):
+                if not gameState.hasWall(self.mapMiddlePoint[0], i):
+                    possibleChokePoints.append((self.mapMiddlePoint[0], i))
+            self.topChokePoint = possibleChokePoints[0]
+            print(possibleChokePoints[0])
+            self.bottomChokePoint = possibleChokePoints[len(possibleChokePoints) - 1]
+            direction = getDirectionAndDistance(ownPosition, self.topChokePoint, gameState)[1]
+            self.firstPatrolDone = False
+        else:
+            if self.goingUp:
+                direction = getDirectionAndDistance(ownPosition, self.topChokePoint, gameState)[1]
+                distance = getDirectionAndDistance(ownPosition, self.topChokePoint, gameState)[0]
+                if distance == 0:
+                    self.goingUp = False
+                    print("toggled down")
+            else:
+                direction = getDirectionAndDistance(ownPosition, self.bottomChokePoint, gameState)[1]
+                distance = getDirectionAndDistance(ownPosition, self.bottomChokePoint, gameState)[0]
+                if distance == 0:
+                    self.goingUp = True
+                    print("toggled up")
 
-        #update behavior according to threat evaluation
-        if self.currPosition == self.mapMiddlePoint:
-            self.currBehavior = Behavior['FOLLOW']
-        
-        #update action according to behavior
-        if self.currBehavior == Behavior['PUSH']:
-            self.currDestination = self.mapMiddlePoint
-        elif self.currBehavior == Behavior['PULL']:
-            self.currDestination = self.initialPosition
-        elif self.currBehavior == Behavior['FOLLOW']:
-            self.currDestination = self.mapMiddlePoint
-        elif self.currBehavior == Behavior['PATROL']:
-            actions = gameState.getLegalActions(self.index)
-            return random.choice(actions)
+        return direction
 
-        return getDirectionAndDistance(gameState.getAgentPosition(self.index), self.currDestination, gameState)[1]
 
-    def updatePosition(self, gameState):
-        self.currPosition = gameState.getAgentPosition(self.index)
+
+
     
     
