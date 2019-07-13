@@ -225,17 +225,19 @@ class AgentOne(CaptureAgent):
         '''
         Your initialization code goes here, if you need any.
         '''
+        self.minFoodxy = (0, 0)
+
         self.gridWall = gameState.getWalls()
         self.home = findHome(self.gridWall,gameState.getAgentPosition(self.index))
 
         if (self.index in gameState.getRedTeamIndices()):
             # left side
-            self.lastNbFood = self.findNbFoodLeft(gameState.getRedFood(), gameState)
+            self.mapMiddlePoint = (self.gridWall.width//2 - 2, self.gridWall.height//2)
+            self.foodInMouth = 0
         else:
             # right side
-            self.lastNbFood = self.findNbFoodLeft(gameState.getBlueFood(), gameState)
-
-        print(self.mapMiddlePoint)
+            self.mapMiddlePoint = (self.gridWall.width//2 + 2, self.gridWall.height//2)
+            self.foodInMouth = 0
 
     def chooseAction(self, gameState: GameState) -> str:
         """
@@ -245,30 +247,43 @@ class AgentOne(CaptureAgent):
         ownPosition = gameState.getAgentPosition(ownIndex)
 
         if (ownIndex in gameState.getBlueTeamIndices()):
-            if self.findNbFoodLeft(gameState.getRedFood(), gameState) >= self.lastNbFood - 1:
+            if self.foodInMouth < 2 and self.findNbFoodLeft(gameState.getRedFood(), gameState) > 0:
                 direction = self.findClosestFoodDirection(gameState.getRedFood(), gameState)
             else:
-                direction = getDirectionAndDistance(ownPosition, self.mapMiddlePoint, gameState)[1]
-                self.lastNbFood = self.findNbFoodLeft(gameState.getRedFood(), gameState)
+                direction = getDirectionAndDistance(ownPosition, self.home, gameState)[1]
+                if ownPosition == self.home:
+                    self.foodInMouth = 0
+
         else:
-            if self.findNbFoodLeft(gameState.getRedFood(), gameState) >= self.lastNbFood - 1:
+            if self.foodInMouth < 2 and self.findNbFoodLeft(gameState.getRedFood(), gameState) > 0:
                 direction = self.findClosestFoodDirection(gameState.getBlueFood(), gameState)
             else:
-                direction = getDirectionAndDistance(ownPosition, self.mapMiddlePoint, gameState)[1]
-                self.lastNbFood = self.findNbFoodLeft(gameState.getRedFood(), gameState)
+                direction = getDirectionAndDistance(ownPosition, self.home, gameState)[1]
+                if ownPosition == self.home:
+                    self.foodInMouth = 0
 
         return direction
 
     def findClosestFoodDirection(self, grid, gameState: GameState) -> str:
+        if (self.minFoodxy == gameState.getAgentPosition(self.index)):
+            self.foodInMouth += 1
+
         minFood = -1
+        minFoodxy = (0, 0)
         ownPosition = gameState.getAgentPosition(self.index)
         for i in range(grid.width):
             for j in range(grid.height):
                 if grid[i][j]:
                     if minFood == -1:
                         minFood = getDirectionAndDistance(ownPosition, (i, j), gameState)
+                        minFoodxy = (i, j)
                     elif minFood[0] > getDirectionAndDistance(ownPosition, (i, j), gameState)[0]:
                         minFood = getDirectionAndDistance(ownPosition, (i, j), gameState)
+                        minFoodxy = (i, j)
+
+        self.minFoodxy = minFoodxy
+        if type(minFood) is int:
+            return Directions.NORTH
         return minFood[1]
 
     def findNbFoodLeft(self, grid, gameState: GameState) -> int:
@@ -289,38 +304,46 @@ Behavior = {
 
 
 class AgentTwo(CaptureAgent):
-    gridWall = []
-    mapMiddlePoint = []
-    currBehavior = Behavior['PUSH']
-    currDestination = []
-    initialPosition = []
-    currPosition = []
-
     def registerInitialState(self, gameState: GameState):
-        CaptureAgent.registerInitialState(self, gameState)
         self.gridWall = gameState.getWalls()
         self.initialPosition = gameState.getAgentPosition(self.index)
         self.currPosition = self.initialPosition
         self.home = findHome(self.gridWall,self.initialPosition)
-        print(self.mapMiddlePoint)
+        if(gameState.getAgentPosition(self.index)[0] > (self.gridWall.width - 1) // 2):
+            self.mapMiddlePoint = (round((self.gridWall.width - 1) * 0.65), self.gridWall.height // 2)
+        else:
+            self.mapMiddlePoint = (round((self.gridWall.width - 1)*0.35), self.gridWall.height // 2)
+
+        self.goingUp = True
+        self.firstPatrolDone = True
+        self.topChokePoint = self.mapMiddlePoint
+        self.bottomChokePoint = self.mapMiddlePoint
+
+        CaptureAgent.registerInitialState(self, gameState)
 
     def chooseAction(self, gameState: GameState) -> str:
-        #Threat evaluation
-        self.updatePosition(gameState)
-
-        #update behavior according to threat evaluation
-        if self.currPosition == self.mapMiddlePoint and self.currBehavior == Behavior['PUSH']:
-            self.currBehavior = Behavior['PULL']
+        ownIndex = self.index
+        ownPosition = gameState.getAgentPosition(ownIndex)
+        if self.firstPatrolDone:
+            possibleChokePoints = []
+            grid = gameState.getWalls()
+            for i in range(len(grid[0]) - 1):
+                if not gameState.hasWall(self.mapMiddlePoint[0], i):
+                    possibleChokePoints.append((self.mapMiddlePoint[0], i))
+            self.topChokePoint = possibleChokePoints[0]
+            self.bottomChokePoint = possibleChokePoints[len(possibleChokePoints) - 1]
+            direction = getDirectionAndDistance(ownPosition, self.topChokePoint, gameState)[1]
+            self.firstPatrolDone = False
         else:
-            self.currBehavior = Behavior['PUSH']
-        
-        #update action according to behavior
-        if self.currBehavior == Behavior['PUSH']:
-            self.currDestination = self.mapMiddlePoint
-        elif self.currBehavior == Behavior['PULL']:
-            self.currDestination = self.mapMiddlePoint
+            if self.goingUp:
+                direction = getDirectionAndDistance(ownPosition, self.topChokePoint, gameState)[1]
+                distance = getDirectionAndDistance(ownPosition, self.topChokePoint, gameState)[0]
+                if distance == 0:
+                    self.goingUp = False
+            else:
+                direction = getDirectionAndDistance(ownPosition, self.bottomChokePoint, gameState)[1]
+                distance = getDirectionAndDistance(ownPosition, self.bottomChokePoint, gameState)[0]
+                if distance == 0:
+                    self.goingUp = True
 
-        return getDirectionAndDistance(gameState.getAgentPosition(self.index), self.mapMiddlePoint, gameState)[1]
-
-    def updatePosition(self, gameState):
-        self.currPosition = gameState.getAgentPosition(self.index)
+        return direction
