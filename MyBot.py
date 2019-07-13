@@ -225,13 +225,16 @@ class AgentTwo(CaptureAgent):
         self.currPosition = self.initialPosition
 
     def chooseAction(self, gameState: GameState) -> str:
+        #Threat evaluation
         self.updatePosition(gameState)
 
+        #update behavior according to threat evaluation
         if self.currPosition == self.mapMiddlePoint and self.currBehavior == Behavior['PUSH']:
             self.currBehavior = Behavior['PULL']
         else:
             self.currBehavior = Behavior['PUSH']
         
+        #update action according to behavior
         if self.currBehavior == Behavior['PUSH']:
             self.currDestination = self.mapMiddlePoint
         elif self.currBehavior == Behavior['PULL']:
