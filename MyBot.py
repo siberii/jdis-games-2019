@@ -14,8 +14,81 @@
 import random
 from pacman.game import Directions
 import pacman.util as util # Free utility functions like Stack or Queue ! 
+from typing import Tuple, List
 from pacman.capture import GameState
 from pacman.captureAgents import CaptureAgent
+
+
+def isAlreadyBetter(cell,queue):
+    for element in queue:
+        if cell[0]==element[0]:
+            if element[1]<cell[1]:
+                return True
+            else:
+                return False 
+    return False
+    
+
+def isInList(myList, point)->bool:
+    for element in myList:
+        if element[0]==point:
+            return True
+    return False
+
+def getAdjacent(tile:Tuple[int,int])->List[Tuple[int,int]]:
+    x=tile[0]
+    y=tile[1]
+    listOfAdjacent=[]
+    listOfAdjacent.append((x+1,y))
+    listOfAdjacent.append((x,y+1))
+    listOfAdjacent.append((x-1,y))
+    listOfAdjacent.append((x,y-1))
+    return listOfAdjacent
+
+def findDirection(queue:List,origin: Tuple[int,int])->str:
+    reverseQueue= reversed(queue)
+    adjacentCells=getAdjacent(origin)
+    for element in reverseQueue:
+        if element[0] in adjacentCells:
+            if element[0][0]+1==origin[0]:
+                return Directions.WEST
+            elif element[0][0]-1==origin[0]:
+                return Directions.EAST
+            elif element[0][1]+1==origin[1]:
+                return Directions.SOUTH
+            else:
+                return Directions.NORTH
+    return
+
+
+
+
+
+def AddToQueue(tile:Tuple, queue, grid):
+    adjacentCells=getAdjacent(tile[0])
+    goodCells=[]
+    for cell in adjacentCells:
+        if(not grid[cell[0]][cell[1]]
+           and not isAlreadyBetter((cell,tile[1]+1),queue)):
+           goodCells.append((cell,tile[1]+1))
+    queue+=goodCells
+
+    
+def getDirectionAndDistance(fromPoint:Tuple[int,int],toPoint:Tuple[int,int], gamestate:GameState) -> Tuple[int,str]:
+    grid =gamestate.getWalls()
+
+    myList=[((toPoint[0],toPoint[1]),0)]
+
+    index=0
+    while (not isInList(myList,fromPoint)):
+        AddToQueue(myList[index], myList, grid)
+        index+=1
+    return (index,findDirection(myList,fromPoint))
+
+
+    
+
+    
 
 #################
 # Team creation #
@@ -72,9 +145,19 @@ class AgentOne(CaptureAgent):
         """
         Picks among legal actions randomly.
         """
-        actions = gameState.getLegalActions(self.index)
+        ownIndex=self.index
+        print(ownIndex)
+        ownPosition=gameState.getAgentPosition(ownIndex)
+        print(ownPosition)
+        destination=(0,0)
+        if (ownIndex in gameState.getBlueTeamIndices()):
+            destination=gameState.getRedCapsules()[0]
+        else:
+            destination=gameState.getBlueCapsules()[0]
 
-        return random.choice(actions)
+        direction=getDirectionAndDistance(ownPosition,destination,gameState)[1]
+        print (direction)
+        return direction
 
 
 class AgentTwo(CaptureAgent):
